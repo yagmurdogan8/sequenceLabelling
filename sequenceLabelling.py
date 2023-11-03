@@ -1,4 +1,4 @@
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 from transformers import AutoTokenizer
 
 sentences = []
@@ -15,7 +15,7 @@ def convert_iob_to_hf_format(input_file):
                 sentences.append(current_sentence)
             current_sentence = []
         elif len(line) == 1:
-            current_sentence.append((token))
+            current_sentence.append(line)
         else:
             token, label = line.split("\t")
             current_sentence.append((token, label))
@@ -40,7 +40,10 @@ def ids_tokens_nertags(sentences):
     return res_ids, res_tokens, res_ner_tags
 
 
-ids, tokens, ner_tags_str = ids_tokens_nertags(sentences)
+ids_train, tokens_train, ner_tags_str_train = ids_tokens_nertags(train_data)
+ids_dev, tokens_dev, ner_tags_str_dev = ids_tokens_nertags(dev_data)
+ids_test, tokens_test, ner_tags_str_test = ids_tokens_nertags(test_data)
+
 # print(ner_tags_str[0])
 
 ner_tag_to_int = {
@@ -59,22 +62,44 @@ ner_tag_to_int = {
     "I-product": 12
 }
 
-ner_tags_int = []
+ner_tags_int_train = []
+ner_tags_int_dev = []
+ner_tags_int_test = []
 
-for sentence_ner_tags in ner_tags_str:
+for sentence_ner_tags in ner_tags_str_train:
     single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
-    ner_tags_int.append(single_ner_tags_int)
+    ner_tags_int_train.append(single_ner_tags_int)
+
+for sentence_ner_tags in ner_tags_str_dev:
+    single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
+    ner_tags_int_dev.append(single_ner_tags_int)
+
+for sentence_ner_tags in ner_tags_str_test:
+    single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
+    ner_tags_int_test.append(single_ner_tags_int)
 
 
-dataset_dict = {
-    'train_data': train_data,
-    'dev_data': dev_data,
-    'test_data': test_data
+train_dict = {
+    'id': ids_train,
+    'tokens': tokens_train,
+    'ner_tags_int': ner_tags_int_train
 }
-train_data_dict = dataset_dict['train_data']
+dev_dict = {
+    'id': ids_dev,
+    'tokens': tokens_dev,
+    'ner_tags_int': ner_tags_int_dev
+}
+test_dict = {
+    'id': ids_test,
+    'tokens': tokens_test,
+    'ner_tags_int': ner_tags_int_test
+}
 
-train_dataset = Dataset.from_dict(train_data_dict)
+train_dataset = DatasetDict(train_dict)
+dev_dataset = DatasetDict(dev_dict)
+test_dataset = DatasetDict(test_dict)
 
+dataset = Dataset.from_dict({'train': train_dataset, 'dev': dev_dataset, 'test': test_dataset})
 print(train_dataset["train_data"][0])
 
 # print(sentences)
@@ -118,6 +143,7 @@ def tokenize_and_align_labels(examples):
 
     tokenized_inputs["labels"] = new_labels
     return tokenized_inputs
+
 
 print(train_dataset)
 
