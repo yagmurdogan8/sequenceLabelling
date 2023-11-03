@@ -95,14 +95,13 @@ test_dict = {
     'ner_tags_int': ner_tags_int_test
 }
 
-train_dataset = DatasetDict(train_dict)
-dev_dataset = DatasetDict(dev_dict)
-test_dataset = DatasetDict(test_dict)
+train_dataset = Dataset.from_dict(train_dict)
+dev_dataset = Dataset.from_dict(dev_dict)
+test_dataset = Dataset.from_dict(test_dict)
 
-dataset = Dataset.from_dict({'train': train_dataset, 'dev': dev_dataset, 'test': test_dataset})
-print(train_dataset["train_data"][0])
+dataset = DatasetDict({'train': train_dataset, 'dev': dev_dataset, 'test': test_dataset})
+print(dataset)
 
-# print(sentences)
 
 tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 
@@ -135,7 +134,7 @@ def tokenize_and_align_labels(examples):
     tokenized_inputs = tokenizer(
         examples["tokens"], truncation=True, is_split_into_words=True
     )
-    all_labels = examples["ner_tags"]
+    all_labels = examples["ner_tags_int"]
     new_labels = []
     for i, labels in enumerate(all_labels):
         word_ids = tokenized_inputs.word_ids(i)
@@ -145,12 +144,10 @@ def tokenize_and_align_labels(examples):
     return tokenized_inputs
 
 
-print(train_dataset)
-
-tokenized_datasets = train_dataset.map(
+tokenized_dataset = train_dataset.map(
     tokenize_and_align_labels,
     batched=True,
-    remove_columns=train_dataset["train"].column_names,
+    remove_columns=dataset["train"].column_names,
 )
 #
 #
