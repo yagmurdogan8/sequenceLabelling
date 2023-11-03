@@ -1,3 +1,4 @@
+import evaluate
 from datasets import Dataset, DatasetDict
 from transformers import AutoTokenizer, DataCollatorForTokenClassification
 
@@ -154,5 +155,13 @@ tokenized_dataset = train_dataset.map(
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
-batch = data_collator([tokenized_dataset["train"][i] for i in range(2)])
-print(batch["labels"])
+batch = data_collator([tokenized_dataset[i] for i in range(2)])
+# print(batch["labels"])
+# print(data_collator)
+
+# evaluate
+
+metric = evaluate.load("seqeval")
+
+labels = train_dataset[0]["ner_tags_int"]
+labels = [ner_tags_str_train[i] for i in labels]
