@@ -1,0 +1,31 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="DuplicatedCode" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <Languages>
+        <language minSize="185" name="Python" />
+      </Languages>
+    </inspection_tool>
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="pandas" />
+          <option value="object.transform" />
+          <option value="object.predict" />
+          <option value="dict.add" />
+          <option value="tuple.user_id" />
+          <option value="tuple.movie_id" />
+          <option value="tuple.rating" />
+          <option value="main.user_mapping" />
+          <option value="main.movie_mapping" />
+          <option value="tuple.UserID" />
+          <option value="tuple.MovieID" />
+          <option value="tuple.Rating" />
+          <option value="list.len" />
+          <option value="networkx.closeness_centrality_parallel" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
