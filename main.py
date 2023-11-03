@@ -1,5 +1,10 @@
 from transformers import AutoTokenizer
 import tensorflow as tf
+from datasets import load_dataset
+from transformers import (AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification,
+                          TrainingArguments, Trainer, pipeline)
+import evaluate
+import numpy as np
 
 train_data = []
 with open("data/wnut17train.conll", "r", encoding='utf-8') as train_file:
@@ -83,11 +88,7 @@ labels = tf.convert_to_tensor([1, 1])  # Replace with your actual labels
 
 # Train on the batch
 model.train_on_batch(batch, labels)
-from datasets import load_dataset
-from transformers import (AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification,
-                          TrainingArguments, Trainer, pipeline)
-import evaluate
-import numpy as np
+
 
 raw_datasets = load_dataset("wnut_17")
 print(raw_datasets)
