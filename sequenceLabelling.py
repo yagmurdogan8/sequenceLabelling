@@ -1,3 +1,4 @@
+from datasets import Dataset
 from transformers import AutoTokenizer
 
 sentences = []
@@ -60,6 +61,20 @@ ner_tag_to_int = {
 
 ner_tags_int = []
 
+for sentence_ner_tags in ner_tags_str:
+    single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
+    ner_tags_int.append(single_ner_tags_int)
+
+data_features = {
+    "id": ids,
+    "tokens": tokens,
+    "ner_tags": ner_tags_int
+}
+
+dataset = Dataset.from_dict(data_features)
+
+print(dataset[0])
+
 # print(sentences)
 
 tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
@@ -89,8 +104,23 @@ def align_labels_with_tokens(labels, word_ids):
             if label % 2 == 1:
                 label += 1
             new_labels.append(label)
-
     return new_labels
+
+
+def tokenize_and_align_labels(examples):
+    tokenized_inputs = tokenizer(
+        examples["tokens"], truncation=True, is_split_into_words=True
+    )
+    all_labels = examples["ner_tags"]
+    new_labels = []
+    for i, labels in enumerate(all_labels):
+        word_ids = tokenized_inputs.word_ids(i)
+        new_labels.append(align_labels_with_tokens(labels, word_ids))
+
+    tokenized_inputs["labels"] = new_labels
+    return tokenized_inputs
+
+
 #
 #
 # def read_from_wnut_file(path):
