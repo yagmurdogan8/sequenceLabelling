@@ -20,6 +20,8 @@ def convert_iob_to_hf_format(input_file):
 
 
 train_data = convert_iob_to_hf_format('data/wnut17train.conll')
+
+
 # dev_data = convert_iob_to_hf_format('data/emerging.dev.conll')
 # test_data = convert_iob_to_hf_format('data/emerging.test.annotated')
 
@@ -28,16 +30,35 @@ def ids_tokens_nertags(sentences):
     res_ids = []
     res_tokens = []
     res_ner_tags = []
-    for id,token_ner_tags in enumerate(sentences):
-      res_ids.append(id)
-      tokens, ner_tags = zip(*token_ner_tags)
-      res_tokens.append(list(tokens))
-      res_ner_tags.append(list(ner_tags))
+    for id, token_ner_tags in enumerate(sentences):
+        res_ids.append(id)
+        tokens, ner_tags = zip(*token_ner_tags)
+        res_tokens.append(list(tokens))
+        res_ner_tags.append(list(ner_tags))
 
     return res_ids, res_tokens, res_ner_tags
 
+
 ids, tokens, ner_tags_str = ids_tokens_nertags(sentences)
-print(ner_tags_str[0])
+# print(ner_tags_str[0])
+
+ner_tag_to_int = {
+    "O": 0,
+    "B-corporation": 1,
+    "I-corporation": 2,
+    "B-creative-work": 3,
+    "I-creative-work": 4,
+    "B-group": 5,
+    "I-group": 6,
+    "B-location": 7,
+    "I-location": 8,
+    "B-person": 9,
+    "I-person": 10,
+    "B-product": 11,
+    "I-product": 12
+}
+
+ner_tags_int = []
 
 # print(sentences)
 
@@ -45,7 +66,8 @@ tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 
 inputs = tokenizer(train_data[0], is_split_into_words=True)
 
-#print(inputs.tokens)
+
+# print(inputs.tokens)
 
 
 def align_labels_with_tokens(labels, word_ids):
