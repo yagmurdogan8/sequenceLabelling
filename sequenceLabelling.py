@@ -10,10 +10,12 @@ def convert_iob_to_hf_format(input_file):
     current_sentence = []
     for line in lines:
         line = line.strip()
-        if line == "":
+        if not line:  # Handle empty lines
             if current_sentence:
                 sentences.append(current_sentence)
             current_sentence = []
+        elif len(line) == 1:
+            current_sentence.append((token))
         else:
             token, label = line.split("\t")
             current_sentence.append((token, label))
@@ -21,10 +23,8 @@ def convert_iob_to_hf_format(input_file):
 
 
 train_data = convert_iob_to_hf_format('data/wnut17train.conll')
-
-
-# dev_data = convert_iob_to_hf_format('data/emerging.dev.conll')
-# test_data = convert_iob_to_hf_format('data/emerging.test.annotated')
+dev_data = convert_iob_to_hf_format('data/emerging.dev.conll')
+test_data = convert_iob_to_hf_format('data/emerging.test.annotated')
 
 
 def ids_tokens_nertags(sentences):
@@ -65,22 +65,21 @@ for sentence_ner_tags in ner_tags_str:
     single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
     ner_tags_int.append(single_ner_tags_int)
 
-data_features = {
-    "id": ids,
-    "tokens": tokens,
-    "ner_tags": ner_tags_int
+
+dataset_dict = {
+    'train_data': train_data,
+    'dev_data': dev_data,
+    'test_data': test_data
 }
+train_data_dict = dataset_dict['train_data']
 
-dataset = Dataset.from_dict(data_features)
+train_dataset = Dataset.from_dict(train_data_dict)
 
-print(dataset[0])
+print(train_dataset["train_data"][0])
 
 # print(sentences)
 
 tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
-
-inputs = tokenizer(train_data[0], is_split_into_words=True)
-
 
 # print(inputs.tokens)
 
@@ -120,7 +119,13 @@ def tokenize_and_align_labels(examples):
     tokenized_inputs["labels"] = new_labels
     return tokenized_inputs
 
+print(train_dataset)
 
+tokenized_datasets = train_dataset.map(
+    tokenize_and_align_labels,
+    batched=True,
+    remove_columns=train_dataset["train"].column_names,
+)
 #
 #
 # def read_from_wnut_file(path):
