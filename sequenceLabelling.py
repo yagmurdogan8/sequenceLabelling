@@ -1,5 +1,6 @@
 import evaluate
 from datasets import Dataset, DatasetDict
+from seqeval.metrics import f1_score, precision_score, recall_score, classification_report
 from transformers import AutoTokenizer, DataCollatorForTokenClassification
 
 sentences = []
@@ -79,7 +80,6 @@ for sentence_ner_tags in ner_tags_str_test:
     single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
     ner_tags_int_test.append(single_ner_tags_int)
 
-
 train_dict = {
     'id': ids_train,
     'tokens': tokens_train,
@@ -103,8 +103,8 @@ test_dataset = Dataset.from_dict(test_dict)
 dataset = DatasetDict({'train': train_dataset, 'dev': dev_dataset, 'test': test_dataset})
 print(dataset)
 
-
 tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
 
 # print(inputs.tokens)
 
@@ -145,26 +145,80 @@ def tokenize_and_align_labels(examples):
     return tokenized_inputs
 
 
-tokenized_dataset = train_dataset.map(
+tokenized_train_dataset = train_dataset.map(
     tokenize_and_align_labels,
     batched=True,
     remove_columns=dataset["train"].column_names,
 )
 
+tokenized_dev_dataset = dev_dataset.map(
+    tokenize_and_align_labels,
+    batched=True,
+    remove_columns=dataset["dev"].column_names,
+)
+
+tokenized_test_dataset = test_dataset.map(
+    tokenize_and_align_labels,
+    batched=True,
+    remove_columns=dataset["test"].column_names,
+)
 # Fine tuning
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
-batch = data_collator([tokenized_dataset[i] for i in range(2)])
+batch = data_collator([tokenized_train_dataset[i] for i in range(2)])
 # print(batch["labels"])
 # print(data_collator)
 
 # evaluate
 
-metric = evaluate.load("seqeval")
+tf_train_dataset = tokenized_train_dataset.to_tf_dataset(
+    columns=["attention_mask", "input_ids", "labels"],
+    collate_fn=data_collator,
+    shuffle=True,
+    batch_size=16,
+)
 
-labels = ner_tags_str_train[train_dataset[0]["id"]]
+tf_dev_dataset = tokenized_dev_dataset.to_tf_dataset(
+    columns=["attention_mask", "input_ids", "labels"],
+    collate_fn=data_collator,
+    shuffle=False,
+    batch_size=16,
+)
 
-predictions = ["O" for _ in labels]
-
-metric.compute(predictions=[predictions], references=[labels])
+tf_test_dataset = tokenized_test_dataset.to_tf_dataset(
+    columns=["attention_mask", "input_ids", "labels"],
+    collate_fn=data_collator,
+    shuffle=False,
+    batch_size=16,
+)
+#
+# metric = evaluate.load("seqeval")
+#
+# labels = ner_tags_str_train[train_dataset[0]["id"]]
+#
+# predictions = ["O",
+#                "B-corporation",
+#                "I-corporation",
+#                "B-creative-work",
+#                "I-creative-work",
+#                "B-group",
+#                "I-group",
+#                "B-location",
+#                "I-location",
+#                "B-person",
+#                "I-person",
+#                "B-product",
+#                "I-product"]
+#
+# f1 = f1_score(labels, predictions)
+# precision = precision_score(labels, predictions)
+# recall = recall_score(labels, predictions)
+#
+# # Generate a classification report
+# report = classification_report(labels, predictions)
+#
+# print("F1 Score:", f1)
+# print("Precision:", precision)
+# print("Recall:", recall)
+# print("Classification Report:", report)
