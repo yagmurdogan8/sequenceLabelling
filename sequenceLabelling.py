@@ -138,6 +138,7 @@ def tokenize_and_align_labels(examples):
         new_labels.append(align_labels_with_tokens(labels, word_ids))
 
     tokenized_inputs["labels"] = new_labels
+    tokenized_inputs.pop("token_type_ids")
     return tokenized_inputs
 
 
@@ -149,28 +150,4 @@ tokenized_dataset = all_dataset.map(
 print(tokenized_dataset)
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
-# batch = data_collator([tokenized_dataset[i] for i in range(2)])
-# print(batch["labels"])
-# print(data_collator)
 
-# evaluate
-
-# metric = evaluate.load("seqeval")
-#
-# labels = ner_tags_str_train[train_dataset[0]["id"]]
-#
-# predictions = ["O",
-#                "B-corporation",
-#                "I-corporation",
-#                "B-creative-work",
-#                "I-creative-work",
-#                "B-group",
-#                "I-group",
-#                "B-location",
-#                "I-location",
-#                "B-person",
-#                "I-person",
-#                "B-product",
-#                "I-product"]
-#
-# metric.compute(predictions=[predictions], references=[labels])
