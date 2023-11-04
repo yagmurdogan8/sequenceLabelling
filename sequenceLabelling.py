@@ -155,3 +155,11 @@ batch = data_collator([tokenized_dataset["train"][i] for i in range(2)])
 # print(batch["labels"])
 
 metric = evaluate.load("seqeval")
+
+labels = all_dataset["train"][0]["ner_tags"]
+print(labels)
+
+predictions = labels.copy()
+predictions[2] = "O"
+metric.compute(predictions=[predictions], references=[labels])
+
