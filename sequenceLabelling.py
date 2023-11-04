@@ -151,6 +151,8 @@ tokenized_dataset = train_dataset.map(
     remove_columns=dataset["train"].column_names,
 )
 
+print(tokenized_dataset)
+
 # Fine tuning
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -160,21 +162,21 @@ batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(data_collator)
 
 tf_train_dataset = tokenized_dataset["train"].to_tf_dataset(
-    columns=["attention_mask", "input_ids", "labels"],
+    columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
     collate_fn=data_collator,
     shuffle=True,
     batch_size=16,
 )
 
-tf_eval_dataset = tokenized_dataset["dev"].to_tf_dataset(
-    columns=["attention_mask", "input_ids", "labels"],
+tf_dev_dataset = tokenized_dataset["dev"].to_tf_dataset(
+    columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
     collate_fn=data_collator,
     shuffle=False,
     batch_size=16,
 )
 
 tf_test_dataset = tokenized_dataset["test"].to_tf_dataset(
-    columns=["attention_mask", "input_ids", "labels"],
+    columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
     collate_fn=data_collator,
     shuffle=False,
     batch_size=16,
