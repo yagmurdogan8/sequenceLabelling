@@ -133,12 +133,18 @@ def align_labels_with_tokens(labels, word_ids):
 
 def tokenize_and_align_labels(examples):
     tokenized_inputs = tokenizer(
-        examples["tokens"], truncation=True, is_split_into_words=True
+        examples["tokens"],
+        truncation=True,
+        is_split_into_words=True,
+        padding="max_length",  # Add this line for padding
+        max_length=128  # Adjust the max length as needed
     )
-    all_labels = examples["ner_tags_int"]
+
+    all_labels = examples['ner_tags_int']  # Use 'ner_tags_int' instead of 'ner_tags'
     new_labels = []
+
     for i, labels in enumerate(all_labels):
-        word_ids = tokenized_inputs.word_ids(i)
+        word_ids = tokenized_inputs.word_ids(batch_index=i)
         new_labels.append(align_labels_with_tokens(labels, word_ids))
 
     tokenized_inputs["labels"] = new_labels
@@ -150,8 +156,17 @@ tokenized_dataset = train_dataset.map(
     batched=True,
     remove_columns=dataset["train"].column_names,
 )
-
 print(tokenized_dataset)
+# tokenized_dev_dataset = dev_dataset.map(
+#     tokenize_and_align_labels,
+#     batched=True,
+#     remove_columns=dataset["dev"].column_names,
+# )
+# tokenized_test_dataset = test_dataset.map(
+#     tokenize_and_align_labels,
+#     batched=True,
+#     remove_columns=dataset["test"].column_names,
+# )
 
 # Fine tuning
 
@@ -161,26 +176,27 @@ batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(batch["labels"])
 # print(data_collator)
 
-tf_train_dataset = tokenized_dataset["train"].to_tf_dataset(
-    columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
-    collate_fn=data_collator,
-    shuffle=True,
-    batch_size=16,
-)
-
-tf_dev_dataset = tokenized_dataset["dev"].to_tf_dataset(
-    columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
-    collate_fn=data_collator,
-    shuffle=False,
-    batch_size=16,
-)
-
-tf_test_dataset = tokenized_dataset["test"].to_tf_dataset(
-    columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
-    collate_fn=data_collator,
-    shuffle=False,
-    batch_size=16,
-)
+print(tokenized_dataset)
+# tf_train_dataset = tokenized_train_dataset.to_tf_dataset(
+#     columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
+#     collate_fn=data_collator,
+#     shuffle=True,
+#     batch_size=16,
+# )
+#
+# tf_dev_dataset = tokenized_dev_dataset.to_tf_dataset(
+#     columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
+#     collate_fn=data_collator,
+#     shuffle=False,
+#     batch_size=16,
+# )
+#
+# tf_test_dataset = tokenized_test_dataset.to_tf_dataset(
+#     columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
+#     collate_fn=data_collator,
+#     shuffle=False,
+#     batch_size=16,
+# )
 
 # evaluate
 
