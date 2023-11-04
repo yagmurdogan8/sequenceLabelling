@@ -159,34 +159,55 @@ batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(batch["labels"])
 # print(data_collator)
 
+tf_train_dataset = tokenized_dataset["train"].to_tf_dataset(
+    columns=["attention_mask", "input_ids", "labels"],
+    collate_fn=data_collator,
+    shuffle=True,
+    batch_size=16,
+)
+
+tf_eval_dataset = tokenized_dataset["dev"].to_tf_dataset(
+    columns=["attention_mask", "input_ids", "labels"],
+    collate_fn=data_collator,
+    shuffle=False,
+    batch_size=16,
+)
+
+tf_test_dataset = tokenized_dataset["test"].to_tf_dataset(
+    columns=["attention_mask", "input_ids", "labels"],
+    collate_fn=data_collator,
+    shuffle=False,
+    batch_size=16,
+)
+
 # evaluate
 
 metric = evaluate.load("seqeval")
 
 labels = ner_tags_str_train[train_dataset[0]["id"]]
 
-predictions = ["O",
-               "B-corporation",
-               "I-corporation",
-               "B-creative-work",
-               "I-creative-work",
-               "B-group",
-               "I-group",
-               "B-location",
-               "I-location",
-               "B-person",
-               "I-person",
-               "B-product",
-               "I-product"]
-
-f1 = f1_score(labels, predictions)
-precision = precision_score(labels, predictions)
-recall = recall_score(labels, predictions)
-
-# Generate a classification report
-report = classification_report(labels, predictions)
-
-print("F1 Score:", f1)
-print("Precision:", precision)
-print("Recall:", recall)
-print("Classification Report:", report)
+# predictions = ["O",
+#                "B-corporation",
+#                "I-corporation",
+#                "B-creative-work",
+#                "I-creative-work",
+#                "B-group",
+#                "I-group",
+#                "B-location",
+#                "I-location",
+#                "B-person",
+#                "I-person",
+#                "B-product",
+#                "I-product"]
+#
+# f1 = f1_score(labels, predictions)
+# precision = precision_score(labels, predictions)
+# recall = recall_score(labels, predictions)
+#
+# # Generate a classification report
+# report = classification_report(labels, predictions)
+#
+# print("F1 Score:", f1)
+# print("Precision:", precision)
+# print("Recall:", recall)
+# print("Classification Report:", report)
