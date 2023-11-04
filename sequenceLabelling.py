@@ -165,3 +165,5 @@ metric = evaluate.load("seqeval")
 
 labels = train_dataset[0]["ner_tags_int"]
 labels = [ner_tags_str_train[i] for i in labels]
+
+print(labels)
