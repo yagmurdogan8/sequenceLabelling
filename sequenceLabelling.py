@@ -1,6 +1,5 @@
 import evaluate
 from datasets import Dataset, DatasetDict
-from seqeval.metrics import f1_score, precision_score, recall_score, classification_report
 from transformers import AutoTokenizer, DataCollatorForTokenClassification
 
 sentences = []
@@ -65,17 +64,16 @@ ner_tag_to_int = {
 }
 
 ner_tags_int_train = []
-ner_tags_int_dev = []
-ner_tags_int_test = []
-
 for sentence_ner_tags in ner_tags_str_train:
     single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
     ner_tags_int_train.append(single_ner_tags_int)
 
+ner_tags_int_dev = []
 for sentence_ner_tags in ner_tags_str_dev:
     single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
     ner_tags_int_dev.append(single_ner_tags_int)
 
+ner_tags_int_test = []
 for sentence_ner_tags in ner_tags_str_test:
     single_ner_tags_int = [ner_tag_to_int[ner_tags] for ner_tags in sentence_ner_tags]
     ner_tags_int_test.append(single_ner_tags_int)
@@ -83,22 +81,23 @@ for sentence_ner_tags in ner_tags_str_test:
 train_dict = {
     'id': ids_train,
     'tokens': tokens_train,
-    'ner_tags_int': ner_tags_int_train
+    'ner_tags': ner_tags_int_train
 }
+
 dev_dict = {
     'id': ids_dev,
     'tokens': tokens_dev,
-    'ner_tags_int': ner_tags_int_dev
+    'ner_tags': ner_tags_int_dev
 }
+
 test_dict = {
     'id': ids_test,
     'tokens': tokens_test,
-    'ner_tags_int': ner_tags_int_test
+    'ner_tags': ner_tags_int_test
 }
-
 train_dataset = Dataset.from_dict(train_dict)
-dev_dataset = Dataset.from_dict(dev_dict)
 test_dataset = Dataset.from_dict(test_dict)
+dev_dataset = Dataset.from_dict(dev_dict)
 
 dataset = DatasetDict({'train': train_dataset, 'dev': dev_dataset, 'test': test_dataset})
 print(dataset)
@@ -133,18 +132,12 @@ def align_labels_with_tokens(labels, word_ids):
 
 def tokenize_and_align_labels(examples):
     tokenized_inputs = tokenizer(
-        examples["tokens"],
-        truncation=True,
-        is_split_into_words=True,
-        padding="max_length",  # Add this line for padding
-        max_length=128  # Adjust the max length as needed
+        examples["tokens"], truncation=True, is_split_into_words=True
     )
-
-    all_labels = examples['ner_tags_int']  # Use 'ner_tags_int' instead of 'ner_tags'
+    all_labels = examples["ner_tags_int"]
     new_labels = []
-
     for i, labels in enumerate(all_labels):
-        word_ids = tokenized_inputs.word_ids(batch_index=i)
+        word_ids = tokenized_inputs.word_ids(i)
         new_labels.append(align_labels_with_tokens(labels, word_ids))
 
     tokenized_inputs["labels"] = new_labels
@@ -156,17 +149,6 @@ tokenized_dataset = train_dataset.map(
     batched=True,
     remove_columns=dataset["train"].column_names,
 )
-print(tokenized_dataset)
-# tokenized_dev_dataset = dev_dataset.map(
-#     tokenize_and_align_labels,
-#     batched=True,
-#     remove_columns=dataset["dev"].column_names,
-# )
-# tokenized_test_dataset = test_dataset.map(
-#     tokenize_and_align_labels,
-#     batched=True,
-#     remove_columns=dataset["test"].column_names,
-# )
 
 # Fine tuning
 
@@ -176,34 +158,12 @@ batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(batch["labels"])
 # print(data_collator)
 
-print(tokenized_dataset)
-# tf_train_dataset = tokenized_train_dataset.to_tf_dataset(
-#     columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
-#     collate_fn=data_collator,
-#     shuffle=True,
-#     batch_size=16,
-# )
-#
-# tf_dev_dataset = tokenized_dev_dataset.to_tf_dataset(
-#     columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
-#     collate_fn=data_collator,
-#     shuffle=False,
-#     batch_size=16,
-# )
-#
-# tf_test_dataset = tokenized_test_dataset.to_tf_dataset(
-#     columns=["input_ids", "token_type_ids", "attention_mask", "labels"],
-#     collate_fn=data_collator,
-#     shuffle=False,
-#     batch_size=16,
-# )
-
 # evaluate
 
-metric = evaluate.load("seqeval")
-
-labels = ner_tags_str_train[train_dataset[0]["id"]]
-
+# metric = evaluate.load("seqeval")
+#
+# labels = ner_tags_str_train[train_dataset[0]["id"]]
+#
 # predictions = ["O",
 #                "B-corporation",
 #                "I-corporation",
@@ -218,14 +178,4 @@ labels = ner_tags_str_train[train_dataset[0]["id"]]
 #                "B-product",
 #                "I-product"]
 #
-# f1 = f1_score(labels, predictions)
-# precision = precision_score(labels, predictions)
-# recall = recall_score(labels, predictions)
-#
-# # Generate a classification report
-# report = classification_report(labels, predictions)
-#
-# print("F1 Score:", f1)
-# print("Precision:", precision)
-# print("Recall:", recall)
-# print("Classification Report:", report)
+# metric.compute(predictions=[predictions], references=[labels])
