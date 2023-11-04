@@ -145,80 +145,48 @@ def tokenize_and_align_labels(examples):
     return tokenized_inputs
 
 
-tokenized_train_dataset = train_dataset.map(
+tokenized_dataset = train_dataset.map(
     tokenize_and_align_labels,
     batched=True,
     remove_columns=dataset["train"].column_names,
 )
 
-tokenized_dev_dataset = dev_dataset.map(
-    tokenize_and_align_labels,
-    batched=True,
-    remove_columns=dataset["dev"].column_names,
-)
-
-tokenized_test_dataset = test_dataset.map(
-    tokenize_and_align_labels,
-    batched=True,
-    remove_columns=dataset["test"].column_names,
-)
 # Fine tuning
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
-batch = data_collator([tokenized_train_dataset[i] for i in range(2)])
+batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(batch["labels"])
 # print(data_collator)
 
 # evaluate
 
-tf_train_dataset = tokenized_train_dataset.to_tf_dataset(
-    columns=["attention_mask", "input_ids", "labels"],
-    collate_fn=data_collator,
-    shuffle=True,
-    batch_size=16,
-)
+metric = evaluate.load("seqeval")
 
-tf_dev_dataset = tokenized_dev_dataset.to_tf_dataset(
-    columns=["attention_mask", "input_ids", "labels"],
-    collate_fn=data_collator,
-    shuffle=False,
-    batch_size=16,
-)
+labels = ner_tags_str_train[train_dataset[0]["id"]]
 
-tf_test_dataset = tokenized_test_dataset.to_tf_dataset(
-    columns=["attention_mask", "input_ids", "labels"],
-    collate_fn=data_collator,
-    shuffle=False,
-    batch_size=16,
-)
-#
-# metric = evaluate.load("seqeval")
-#
-# labels = ner_tags_str_train[train_dataset[0]["id"]]
-#
-# predictions = ["O",
-#                "B-corporation",
-#                "I-corporation",
-#                "B-creative-work",
-#                "I-creative-work",
-#                "B-group",
-#                "I-group",
-#                "B-location",
-#                "I-location",
-#                "B-person",
-#                "I-person",
-#                "B-product",
-#                "I-product"]
-#
-# f1 = f1_score(labels, predictions)
-# precision = precision_score(labels, predictions)
-# recall = recall_score(labels, predictions)
-#
-# # Generate a classification report
-# report = classification_report(labels, predictions)
-#
-# print("F1 Score:", f1)
-# print("Precision:", precision)
-# print("Recall:", recall)
-# print("Classification Report:", report)
+predictions = ["O",
+               "B-corporation",
+               "I-corporation",
+               "B-creative-work",
+               "I-creative-work",
+               "B-group",
+               "I-group",
+               "B-location",
+               "I-location",
+               "B-person",
+               "I-person",
+               "B-product",
+               "I-product"]
+
+f1 = f1_score(labels, predictions)
+precision = precision_score(labels, predictions)
+recall = recall_score(labels, predictions)
+
+# Generate a classification report
+report = classification_report(labels, predictions)
+
+print("F1 Score:", f1)
+print("Precision:", precision)
+print("Recall:", recall)
+print("Classification Report:", report)
