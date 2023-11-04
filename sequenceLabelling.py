@@ -130,40 +130,31 @@ def align_labels_with_tokens(labels, word_ids):
 
 
 def tokenize_and_align_labels(examples):
-    tokenized_inputs = tokenizer(
-        examples["tokens"], truncation=True, is_split_into_words=True
-    )
-    all_labels = examples["ner_tags"]
-    new_labels = []
-    for i, labels in enumerate(all_labels):
-        word_ids = tokenized_inputs.word_ids(i)
-        new_labels.append(align_labels_with_tokens(labels, word_ids))
-
-    tokenized_inputs["labels"] = new_labels
+    tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
+    labels = []
+    for i, label_ids in enumerate(examples["ner_tags"]):
+        word_ids = tokenized_inputs.word_ids(batch_index=i)
+        previous_word_idx = None
+        label_ids_aligned = [-100]  # Special value for [CLS]
+        for word_idx in word_ids:
+            if word_idx is None:
+                label_ids_aligned.append(-100)  # We set padding tokens to -100
+            elif word_idx != previous_word_idx:
+                label_ids_aligned.append(label_ids[word_idx])
+            else:
+                label_ids_aligned.append(
+                    label_ids[word_idx] if label_ids[word_idx] == label_ids[word_idx - 1] else -100)
+            previous_word_idx = word_idx
+        labels.append(label_ids_aligned)
+    tokenized_inputs["labels"] = labels
     return tokenized_inputs
 
 
-tokenized_train_dataset = train_dataset.map(
+tokenized_dataset = train_dataset.map(
     tokenize_and_align_labels,
     batched=True,
-    remove_columns=dataset["train"].column_names,
+    remove_columns=["tokens", "ner_tags"]
 )
-tokenized_dev_dataset = dev_dataset.map(
-    tokenize_and_align_labels,
-    batched=True,
-    remove_columns=dataset["dev"].column_names,
-)
-tokenized_test_dataset = test_dataset.map(
-    tokenize_and_align_labels,
-    batched=True,
-    remove_columns=dataset["test"].column_names,
-)
-tokenized_dataset = DatasetDict({'train': tokenized_train_dataset,
-                                 'dev': tokenized_dev_dataset,
-                                 'test': tokenized_test_dataset})
-
-
-print(tokenized_dataset)
 # Fine tuning
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
