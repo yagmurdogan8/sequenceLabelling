@@ -2,10 +2,9 @@ import evaluate
 from datasets import Dataset, DatasetDict
 from transformers import AutoTokenizer, DataCollatorForTokenClassification
 
-sentences = []
-
 
 def convert_iob_to_hf_format(input_file):
+    sentences = []
     with open(input_file, 'r', encoding="utf-8") as file:
         lines = file.readlines()
     current_sentence = []
@@ -134,7 +133,7 @@ def tokenize_and_align_labels(examples):
     tokenized_inputs = tokenizer(
         examples["tokens"], truncation=True, is_split_into_words=True
     )
-    all_labels = examples["ner_tags_int"]
+    all_labels = examples["ner_tags"]
     new_labels = []
     for i, labels in enumerate(all_labels):
         word_ids = tokenized_inputs.word_ids(i)
@@ -144,12 +143,27 @@ def tokenize_and_align_labels(examples):
     return tokenized_inputs
 
 
-tokenized_dataset = train_dataset.map(
+tokenized_train_dataset = train_dataset.map(
     tokenize_and_align_labels,
     batched=True,
     remove_columns=dataset["train"].column_names,
 )
+tokenized_dev_dataset = dev_dataset.map(
+    tokenize_and_align_labels,
+    batched=True,
+    remove_columns=dataset["dev"].column_names,
+)
+tokenized_test_dataset = test_dataset.map(
+    tokenize_and_align_labels,
+    batched=True,
+    remove_columns=dataset["test"].column_names,
+)
+tokenized_dataset = DatasetDict({'train': tokenized_train_dataset,
+                                 'dev': tokenized_dev_dataset,
+                                 'test': tokenized_test_dataset})
 
+
+print(tokenized_dataset)
 # Fine tuning
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
