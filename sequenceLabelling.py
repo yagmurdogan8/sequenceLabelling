@@ -104,32 +104,47 @@ print(all_dataset)
 tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 
 
+def align_labels_with_tokens(labels, word_ids):
+    new_labels = []
+    current_word = None
+    for word_id in word_ids:
+        if word_id != current_word:
+            # Start of a new word!
+            current_word = word_id
+            label = -1 if word_id is None else labels[word_id]
+            new_labels.append(label)
+        elif word_id is None:
+            # Special token
+            new_labels.append(-1)
+        else:
+            # Same word as previous token
+            label = labels[word_id]
+            # If the label is B-XXX we change it to I-XXX
+            if label % 2 == 1:
+                label += 1
+            new_labels.append(label)
+
+    return new_labels
+
+
 def tokenize_and_align_labels(examples):
-    tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
+    tokenized_inputs = tokenizer(
+        examples["tokens"], truncation=True, is_split_into_words=True
+    )
+    all_labels = examples["ner_tags"]
+    new_labels = []
+    for i, labels in enumerate(all_labels):
+        word_ids = tokenized_inputs.word_ids(i)
+        new_labels.append(align_labels_with_tokens(labels, word_ids))
 
-    labels = []
-    for i, label in enumerate(examples["ner_tags"]):
-        word_ids = tokenized_inputs.word_ids(batch_index=i)  # Map tokens to their respective word.
-        previous_word_id = None
-        label_ids = []
-        for word_id in word_ids:  # Set the special tokens to -1
-            if word_id is None:
-                label_ids.append(-1)
-            elif word_id != previous_word_id:  # Only label the first token of a given word.
-                label_ids.append(label[word_id])
-            else:
-                label_ids.append(-1)
-            previous_word_id = word_id
-        labels.append(label_ids)
-
-    tokenized_inputs["ner_tags"] = labels
+    tokenized_inputs["labels"] = new_labels
     return tokenized_inputs
 
 
 tokenized_dataset = all_dataset.map(
     tokenize_and_align_labels,
     batched=True,
-    remove_columns=['id']
+    remove_columns=all_dataset["train"].column_names,
 )
 print(tokenized_dataset)
 
