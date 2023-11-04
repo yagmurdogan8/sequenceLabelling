@@ -98,57 +98,30 @@ train_dataset = Dataset.from_dict(train_dict)
 test_dataset = Dataset.from_dict(test_dict)
 dev_dataset = Dataset.from_dict(dev_dict)
 
-dataset = DatasetDict({'train': train_dataset, 'dev': dev_dataset, 'test': test_dataset})
-print(dataset)
+all_dataset = DatasetDict({'train': train_dataset, 'dev': dev_dataset, 'test': test_dataset})
+print(all_dataset)
 
 tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 
 
-# print(inputs.tokens)
-
-
-def align_labels_with_tokens(labels, word_ids):
-    new_labels = []
-    current_word = None
-    for word_id in word_ids:
-        if word_id != current_word:
-            # Start of a new word!
-            current_word = word_id
-            label = -100 if word_id is None else labels[word_id]
-            new_labels.append(label)
-        elif word_id is None:
-            # Special token
-            new_labels.append(-100)
-        else:
-            # Same word as previous token
-            label = labels[word_id]
-            # If the label is B-XXX we change it to I-XXX
-            if label % 2 == 1:
-                label += 1
-            new_labels.append(label)
-    return new_labels
-
-
-data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
-
-
 def tokenize_and_align_labels(examples):
     tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
+
     labels = []
-    for i, label_ids in enumerate(examples["ner_tags"]):
-        word_ids = tokenized_inputs.word_ids(batch_index=i)
+    for i, label in enumerate(examples["ner_tags"]):
+        word_ids = tokenized_inputs.word_ids(batch_index=i)  # Map tokens to their respective word.
         previous_word_idx = None
-        label_ids_aligned = [-100]  # Special value for [CLS]
-        for word_idx in word_ids:
+        label_ids = []
+        for word_idx in word_ids:  # Set the special tokens to -100.
             if word_idx is None:
-                label_ids_aligned.append(-100)  # We set padding tokens to -100
-            elif word_idx != previous_word_idx:
-                label_ids_aligned.append(label_ids[word_idx])
+                label_ids.append(-100)
+            elif word_idx != previous_word_idx:  # Only label the first token of a given word.
+                label_ids.append(label[word_idx])
             else:
-                label_ids_aligned.append(
-                    label_ids[word_idx] if label_ids[word_idx] == label_ids[word_idx - 1] else -100)
+                label_ids.append(-100)
             previous_word_idx = word_idx
-        labels.append(label_ids_aligned)
+        labels.append(label_ids)
+
     tokenized_inputs["labels"] = labels
     return tokenized_inputs
 
@@ -156,9 +129,11 @@ def tokenize_and_align_labels(examples):
 tokenized_dataset = train_dataset.map(
     tokenize_and_align_labels,
     batched=True,
-    remove_columns=["tokens", "ner_tags"]
+    remove_columns=all_dataset['train'].column_names
 )
+print(tokenized_dataset)
 
+data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(batch["labels"])
 # print(data_collator)
