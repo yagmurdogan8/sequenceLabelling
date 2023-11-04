@@ -129,6 +129,9 @@ def align_labels_with_tokens(labels, word_ids):
     return new_labels
 
 
+data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
+
+
 def tokenize_and_align_labels(examples):
     tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
     labels = []
@@ -155,9 +158,6 @@ tokenized_dataset = train_dataset.map(
     batched=True,
     remove_columns=["tokens", "ner_tags"]
 )
-# Fine tuning
-
-data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
 batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(batch["labels"])
