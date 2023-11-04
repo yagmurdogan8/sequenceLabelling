@@ -163,7 +163,7 @@ labels = [label_names for i in labels]
 predictions = labels.copy()
 
 metrics = metric.compute(predictions=[predictions], references=[labels])
-print(metrics)
+
 id2label = {i: label for i, label in enumerate(label_names)}
 label2id = {v: k for k, v in id2label.items()}
 
