@@ -1,6 +1,6 @@
 import evaluate
 from datasets import Dataset, DatasetDict
-from transformers import AutoTokenizer, DataCollatorForTokenClassification
+from transformers import AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification
 
 
 def convert_iob_to_hf_format(input_file):
@@ -160,8 +160,20 @@ labels = all_dataset["train"][0]["ner_tags"]
 label_names = ner_tag_to_int.keys()
 labels = [label_names for i in labels]
 
+predictions = labels.copy()
+
+metrics = metric.compute(predictions=[predictions], references=[labels])
+print(metrics)
 id2label = {i: label for i, label in enumerate(label_names)}
 label2id = {v: k for k, v in id2label.items()}
 
-print(id2label)
-print(label2id)
+# print(id2label)
+# print(label2id)
+#
+# model = AutoModelForTokenClassification.from_pretrained(
+#     'bert-base-cased',
+#     id2label=id2label,
+#     label2id=label2id,
+# )
+
+
