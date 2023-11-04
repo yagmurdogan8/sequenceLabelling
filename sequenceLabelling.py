@@ -157,9 +157,11 @@ batch = data_collator([tokenized_dataset["train"][i] for i in range(2)])
 metric = evaluate.load("seqeval")
 
 labels = all_dataset["train"][0]["ner_tags"]
-print(labels)
+label_names = ner_tag_to_int.keys()
+labels = [label_names for i in labels]
 
-predictions = labels.copy()
-predictions[2] = "O"
-metric.compute(predictions=[predictions], references=[labels])
+id2label = {i: label for i, label in enumerate(label_names)}
+label2id = {v: k for k, v in id2label.items()}
 
+print(id2label)
+print(label2id)
