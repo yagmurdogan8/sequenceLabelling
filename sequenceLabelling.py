@@ -110,31 +110,31 @@ def tokenize_and_align_labels(examples):
     labels = []
     for i, label in enumerate(examples["ner_tags"]):
         word_ids = tokenized_inputs.word_ids(batch_index=i)  # Map tokens to their respective word.
-        previous_word_idx = None
+        previous_word_id = None
         label_ids = []
-        for word_idx in word_ids:  # Set the special tokens to -100.
-            if word_idx is None:
-                label_ids.append(-100)
-            elif word_idx != previous_word_idx:  # Only label the first token of a given word.
-                label_ids.append(label[word_idx])
+        for word_id in word_ids:  # Set the special tokens to -1
+            if word_id is None:
+                label_ids.append(-1)
+            elif word_id != previous_word_id:  # Only label the first token of a given word.
+                label_ids.append(label[word_id])
             else:
-                label_ids.append(-100)
-            previous_word_idx = word_idx
+                label_ids.append(-1)
+            previous_word_id = word_id
         labels.append(label_ids)
 
-    tokenized_inputs["labels"] = labels
+    tokenized_inputs["ner_tags"] = labels
     return tokenized_inputs
 
 
-tokenized_dataset = train_dataset.map(
+tokenized_dataset = all_dataset.map(
     tokenize_and_align_labels,
     batched=True,
-    remove_columns=all_dataset['train'].column_names
+    remove_columns=['id']
 )
 print(tokenized_dataset)
 
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
-batch = data_collator([tokenized_dataset[i] for i in range(2)])
+# batch = data_collator([tokenized_dataset[i] for i in range(2)])
 # print(batch["labels"])
 # print(data_collator)
 
