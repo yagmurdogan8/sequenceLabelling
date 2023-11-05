@@ -167,13 +167,13 @@ metrics = metric.compute(predictions=[predictions], references=[labels])
 id2label = {i: label for i, label in enumerate(label_names)}
 label2id = {v: k for k, v in id2label.items()}
 
-# print(id2label)
-# print(label2id)
-#
-# model = AutoModelForTokenClassification.from_pretrained(
-#     'bert-base-cased',
-#     id2label=id2label,
-#     label2id=label2id,
-# )
+print(id2label)
+print(label2id)
+
+model = AutoModelForTokenClassification.from_pretrained(
+    'bert-base-cased',
+    id2label=id2label,
+    label2id=label2id,
+)
 
 
