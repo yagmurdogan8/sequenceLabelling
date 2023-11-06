@@ -149,6 +149,8 @@ tokenized_dataset = all_dataset.map(
 )
 print(tokenized_dataset)
 
+# Fine tuning task baslangici
+
 data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
 batch = data_collator([tokenized_dataset["train"][i] for i in range(2)])
