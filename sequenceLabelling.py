@@ -23,9 +23,9 @@ def convert_iob_to_hf_format(input_file):
     return sentences
 
 
-train_data = convert_iob_to_hf_format('wnut17train.conll')
-dev_data = convert_iob_to_hf_format('emerging.dev.conll')
-test_data = convert_iob_to_hf_format('emerging.test.annotated')
+train_data = convert_iob_to_hf_format('data/wnut17train.conll')
+dev_data = convert_iob_to_hf_format('data/emerging.dev.conll')
+test_data = convert_iob_to_hf_format('data/emerging.test.annotated')
 
 
 def ids_tokens_nertags(sentences):
