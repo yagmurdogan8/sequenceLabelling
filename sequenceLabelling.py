@@ -156,12 +156,16 @@ data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 batch = data_collator([tokenized_dataset["train"][i] for i in range(2)])
 # print(batch["labels"])
 
+for i in range(2):
+    print(tokenized_dataset["train"][i]["labels"])
+
 metric = evaluate.load("seqeval")
 
 labels = all_dataset["train"][0]["ner_tags"]
 label_names = ner_tag_to_int.keys()
 labels = [label_names for i in labels]
 
+print(labels)
 predictions = labels.copy()
 
 metrics = metric.compute(predictions=[predictions], references=[labels])
