@@ -1,5 +1,5 @@
 import evaluate
-from datasets import Dataset, DatasetDict
+from datasets import Dataset, DatasetDict, load_metric
 from transformers import AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification
 
 
@@ -159,16 +159,28 @@ batch = data_collator([tokenized_dataset["train"][i] for i in range(2)])
 for i in range(2):
     print(tokenized_dataset["train"][i]["labels"])
 
-metric = evaluate.load("seqeval")
+metric = load_metric("seqeval")
 
-labels = all_dataset["train"][0]["ner_tags"]
-label_names = ner_tag_to_int.keys()
-labels = [label_names for i in labels]
+labels = all_dataset["train"]["ner_tags"]
+label_names = list(ner_tag_to_int.keys())
+predictions = []
 
-print(labels)
-predictions = labels.copy()
+for label_seq in labels:
+    label_seq = [label_names[label_id] for label_id in label_seq]
+    predictions.append(label_seq)
 
-metrics = metric.compute(predictions=[predictions], references=[labels])
+metrics = metric.compute(predictions=predictions, references=predictions)
+
+print(metrics)
+
+# labels = all_dataset["train"][0]["ner_tags"]
+# label_names = ner_tag_to_int.keys()
+# labels = [label_names for i in labels]
+#
+# # print("Labels:", labels)
+# predictions = labels.copy()
+# predictions[2] = "O"
+# metrics = metric.compute(predictions=[predictions], references=[labels])
 
 id2label = {i: label for i, label in enumerate(label_names)}
 label2id = {v: k for k, v in id2label.items()}
