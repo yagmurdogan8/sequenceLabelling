@@ -2,6 +2,7 @@ import evaluate
 from datasets import Dataset, DatasetDict
 from transformers import AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification, \
     TFAutoModelForTokenClassification, create_optimizer
+from transformers.keras_callbacks import PushToHubCallback
 import tensorflow as tf
 
 
@@ -219,3 +220,12 @@ optimizer, schedule = create_optimizer(
     weight_decay_rate=0.01,
 )
 model.compile(optimizer=optimizer)
+
+callback = PushToHubCallback(output_dir="bert-finetuned-ner", tokenizer=tokenizer)
+
+model.fit(
+    tf_train_dataset,
+    validation_data=tf_dev_dataset,
+    callbacks=[callback],
+    epochs=num_epochs,
+)
