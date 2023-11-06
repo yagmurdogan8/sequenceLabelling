@@ -11,14 +11,14 @@ def convert_iob_to_hf_format(input_file):
     current_sentence = []
     for line in lines:
         line = line.strip()
-        if not line:  # Handle empty lines
+        if not line:
             if current_sentence:
                 sentences.append(current_sentence)
             current_sentence = []
         elif len(line) == 1:
-            current_sentence.append(line)
+            sentences.append(current_sentence)
         else:
-            token, label = line.split("\t")
+            token, label = line.split()
             current_sentence.append((token, label))
     return sentences
 
@@ -127,19 +127,25 @@ def align_labels_with_tokens(labels, word_ids):
 
     return new_labels
 
-
 def tokenize_and_align_labels(examples):
-    tokenized_inputs = tokenizer(
-        examples["tokens"], truncation=True, is_split_into_words=True
-    )
-    all_labels = examples["ner_tags"]
-    new_labels = []
-    for i, labels in enumerate(all_labels):
-        word_ids = tokenized_inputs.word_ids(i)
-        new_labels.append(align_labels_with_tokens(labels, word_ids))
+    tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
 
-    tokenized_inputs["labels"] = new_labels
-    tokenized_inputs.pop("token_type_ids")
+    labels = []
+    for i, label in enumerate(examples["ner_tags"]):
+        word_ids = tokenized_inputs.word_ids(batch_index=i)  # Map tokens to their respective word.
+        previous_word_idx = None
+        label_ids = []
+        for word_idx in word_ids:  # Set the special tokens to -100.
+            if word_idx is None:
+                label_ids.append(-100)
+            elif word_idx != previous_word_idx:  # Only label the first token of a given word.
+                label_ids.append(label[word_idx])
+            else:
+                label_ids.append(-100)
+            previous_word_idx = word_idx
+        labels.append(label_ids)
+
+    tokenized_inputs["labels"] = labels
     return tokenized_inputs
 
 
@@ -158,24 +164,21 @@ batch = data_collator([tokenized_dataset["train"][i] for i in range(2)])
 print(batch['labels'])
 
 tf_train_dataset = tokenized_dataset["train"].to_tf_dataset(
-    columns=["attention_mask", "input_ids", "token_type_ids"],
-    label_cols=["labels"],
+    columns=["input_ids", "attention_mask", "labels"],
     shuffle=True,
     collate_fn=data_collator,
     batch_size=8,
 )
 
 tf_dev_dataset = tokenized_dataset["dev"].to_tf_dataset(
-    columns=["attention_mask", "input_ids", "token_type_ids"],
-    label_cols=["labels"],
+    columns=["input_ids", "attention_mask", "labels"],
     shuffle=True,
     collate_fn=data_collator,
     batch_size=8,
 )
 
 tf_test_dataset = tokenized_dataset["test"].to_tf_dataset(
-    columns=["attention_mask", "input_ids", "token_type_ids"],
-    label_cols=["labels"],
+    columns=["input_ids", "attention_mask", "labels"],
     shuffle=True,
     collate_fn=data_collator,
     batch_size=8,
