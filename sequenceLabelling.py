@@ -1,6 +1,7 @@
 import evaluate
 from datasets import Dataset, DatasetDict
-from transformers import AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification, TFAutoModelForTokenClassification
+from transformers import AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification, \
+    TFAutoModelForTokenClassification, create_optimizer
 import tensorflow as tf
 
 
@@ -127,6 +128,7 @@ def align_labels_with_tokens(labels, word_ids):
 
     return new_labels
 
+
 def tokenize_and_align_labels(examples):
     tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
 
@@ -198,3 +200,22 @@ model = TFAutoModelForTokenClassification.from_pretrained(
     label2id=label2id,
 )
 
+# print(model.config.num_labels)
+
+# Train in mixed-precision float16
+# Comment this line out if you're using a GPU that will not benefit from this
+tf.keras.mixed_precision.set_global_policy("mixed_float16")
+
+# The number of training steps is the number of samples in the dataset, divided by the batch size then multiplied
+# by the total number of epochs. Note that the tf_train_dataset here is a batched tf.data.Dataset,
+# not the original Hugging Face Dataset, so its len() is already num_samples // batch_size.
+num_epochs = 3
+num_train_steps = len(tf_train_dataset) * num_epochs
+
+optimizer, schedule = create_optimizer(
+    init_lr=2e-5,
+    num_warmup_steps=0,
+    num_train_steps=num_train_steps,
+    weight_decay_rate=0.01,
+)
+model.compile(optimizer=optimizer)
