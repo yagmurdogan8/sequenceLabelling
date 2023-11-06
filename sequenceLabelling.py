@@ -1,6 +1,6 @@
 import evaluate
 from datasets import Dataset, DatasetDict
-from transformers import AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification
+from transformers import AutoTokenizer, DataCollatorForTokenClassification, AutoModelForTokenClassification, TFAutoModelForTokenClassification
 import tensorflow as tf
 
 
@@ -23,9 +23,9 @@ def convert_iob_to_hf_format(input_file):
     return sentences
 
 
-train_data = convert_iob_to_hf_format('data/wnut17train.conll')
-dev_data = convert_iob_to_hf_format('data/emerging.dev.conll')
-test_data = convert_iob_to_hf_format('data/emerging.test.annotated')
+train_data = convert_iob_to_hf_format('wnut17train.conll')
+dev_data = convert_iob_to_hf_format('emerging.dev.conll')
+test_data = convert_iob_to_hf_format('emerging.test.annotated')
 
 
 def ids_tokens_nertags(sentences):
@@ -184,71 +184,17 @@ tf_test_dataset = tokenized_dataset["test"].to_tf_dataset(
     batch_size=8,
 )
 
+label_names = ner_tag_to_int.keys()
 
-#
-#
-# # print(batch["labels"])
-#
-# # for i in range(2):
-# #     print(tokenized_dataset["train"][i]["labels"])
-#
-# label_names = ner_tag_to_int.keys()
-#
-# id2label = {i: label for i, label in enumerate(label_names)}
-#
-# label_names = list(ner_tag_to_int.keys())
-#
-# model = AutoModelForTokenClassification.from_pretrained(
-#     'bert-base-cased',
-#     id2label=id2label,
-#     label2id=ner_tag_to_int,  # Use the original ner_tag_to_int mapping
-# )
-# metric = evaluate.load("seqeval")
-#
-#
-# def evaluate_model(model, dataset):
-#     predictions = []
-#     references = []
-#
-#     for example in dataset:
-#         tokens = example["input_ids"]
-#         labels = example["labels"]
-#
-#         # Convert label IDs to label names
-#         predicted_labels = model(**tokens).logits.argmax(dim=2)
-#         predicted_labels = [label_names[label_id] for label_id in predicted_labels[0]]
-#         true_labels = [label_names[label_id] for label_id in labels[0]]
-#
-#         predictions.append(predicted_labels)
-#         references.append(true_labels)
-#
-#     # Prepare predictions and references in the correct format
-#     predictions = [{'label': p} for p in predictions]
-#     references = [{'label': r} for r in references]
-#
-#     metrics = metric.compute(predictions=predictions, references=references)
-#
-#     return metrics
-#
-#
-# test_metrics = evaluate_model(model, tokenized_dataset["test"])
-# print(test_metrics)
-#
-#
-# # for label_seq in labels:
-# #     label_seq = [label_names[label_id] for label_id in label_seq]
-# #     predictions.append(label_seq)
-# #
-# # metrics = metric.compute(predictions=predictions, references=predictions)
-# #
-# # print(metrics)
-# #
-# # # labels = all_dataset["train"][0]["ner_tags"]
-# # # label_names = ner_tag_to_int.keys()
-# # # labels = [label_names for i in labels]
-# # #
-# # # # print("Labels:", labels)
-# # # predictions = labels.copy()
-# # # predictions[2] = "O"
-# # # metrics = metric.compute(predictions=[predictions], references=[labels])
-#
+id2label = {i: label for i, label in enumerate(label_names)}
+label2id = {v: k for k, v in id2label.items()}
+
+print(id2label)
+print(label2id)
+
+model = TFAutoModelForTokenClassification.from_pretrained(
+    "bert-base-cased",
+    id2label=id2label,
+    label2id=label2id,
+)
+
