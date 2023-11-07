@@ -233,6 +233,10 @@ model.fit(
 
 metric = evaluate.load("seqeval")
 
+label_names = list(ner_tag_to_int.keys())
+
+print(label_names)
+
 all_predictions = []
 all_labels = []
 for batch in tf_dev_dataset:
