@@ -229,3 +229,7 @@ model.fit(
     callbacks=[callback],
     epochs=num_epochs,
 )
+
+
+metric = evaluate.load("seqeval")
+
