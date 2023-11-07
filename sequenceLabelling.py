@@ -5,6 +5,8 @@ from transformers import AutoTokenizer, DataCollatorForTokenClassification, Auto
 from transformers.keras_callbacks import PushToHubCallback
 import tensorflow as tf
 import numpy as np
+from torch.optim import AdamW
+from accelerate import Accelerator
 
 
 def convert_iob_to_hf_format(input_file):
@@ -252,3 +254,10 @@ for batch in tf_dev_dataset:
 metrics = metric.compute(predictions=[all_predictions], references=[all_labels])
 
 print(metrics)
+
+optimizer = AdamW(model.parameters(), lr=2e-5)
+
+accelerator = Accelerator()
+model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
+    model, optimizer, train_dataloader, eval_dataloader
+)
