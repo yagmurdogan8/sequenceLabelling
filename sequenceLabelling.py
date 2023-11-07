@@ -306,3 +306,4 @@ for learning_rate in learning_rates:
         metrics = metric.compute(predictions=[all_predictions], references=[all_labels])
 
         print(f"Results with learning rate {learning_rate} and batch size {batch_size}: ", metrics)
+
