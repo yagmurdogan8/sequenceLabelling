@@ -4,6 +4,7 @@ from transformers import AutoTokenizer, DataCollatorForTokenClassification, Auto
     TFAutoModelForTokenClassification, create_optimizer
 from transformers.keras_callbacks import PushToHubCallback
 import tensorflow as tf
+import numpy as np
 
 
 def convert_iob_to_hf_format(input_file):
@@ -230,6 +231,20 @@ model.fit(
     epochs=num_epochs,
 )
 
-
 metric = evaluate.load("seqeval")
 
+all_predictions = []
+all_labels = []
+for batch in tf_dev_dataset:
+    logits = model.predict_on_batch(batch)["logits"]
+    labels = batch["labels"]
+    predictions = np.argmax(logits, axis=-1)
+    for prediction, label in zip(predictions, labels):
+        for predicted_idx, label_idx in zip(prediction, label):
+            if label_idx == -100:
+                continue
+            all_predictions.append(label_names[predicted_idx])
+            all_labels.append(label_names[label_idx])
+metrics = metric.compute(predictions=[all_predictions], references=[all_labels])
+
+print(metrics)
