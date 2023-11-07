@@ -3,5 +3,11 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/bert-finetuned-ner" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bert-finetuned-ner_lr0.001_bs16" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bert-finetuned-ner_lr0.001_bs32" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bert-finetuned-ner_lr1e-05_bs16" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bert-finetuned-ner_lr1e-05_bs32" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bert-finetuned-ner_lr2e-05_bs16" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bert-finetuned-ner_lr2e-05_bs32" vcs="Git" />
   </component>
 </project>
