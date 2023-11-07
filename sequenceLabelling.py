@@ -5,8 +5,6 @@ from transformers import AutoTokenizer, DataCollatorForTokenClassification, Auto
 from transformers.keras_callbacks import PushToHubCallback
 import tensorflow as tf
 import numpy as np
-from torch.optim import AdamW
-from accelerate import Accelerator
 
 
 def convert_iob_to_hf_format(input_file):
@@ -253,11 +251,58 @@ for batch in tf_dev_dataset:
             all_labels.append(label_names[label_idx])
 metrics = metric.compute(predictions=[all_predictions], references=[all_labels])
 
-print(metrics)
+print("Baseline Results: ", metrics)
 
-optimizer = AdamW(model.parameters(), lr=2e-5)
+learning_rates = [1e-5, 1e-3, 2e-5]
+batch_sizes = [16, 32]
 
-accelerator = Accelerator()
-model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
-    model, optimizer, train_dataloader, eval_dataloader
-)
+for learning_rate in learning_rates:
+    for batch_size in batch_sizes:
+        print(f"Training with learning rate {learning_rate} and batch size {batch_size}:")
+
+        num_epochs = 3
+        num_train_steps = len(tf_train_dataset) * num_epochs
+
+        optimizer, schedule = create_optimizer(
+            init_lr=learning_rate,  # Set the learning rate to the desired value
+            num_warmup_steps=0,
+            num_train_steps=num_train_steps,
+            weight_decay_rate=0.01,
+        )
+        model.compile(optimizer=optimizer)
+
+        callback = PushToHubCallback(output_dir=f"bert-finetuned-ner_lr{learning_rate}_bs{batch_size}", tokenizer=tokenizer)
+
+        tf_train_dataset = tokenized_dataset["train"].to_tf_dataset(
+            columns=["input_ids", "attention_mask", "labels"],
+            shuffle=True,
+            collate_fn=data_collator,
+            batch_size=batch_size,
+        )
+
+        model.fit(
+            tf_train_dataset,
+            validation_data=tf_dev_dataset,
+            callbacks=[callback],
+            epochs=num_epochs,
+        )
+
+        metric = evaluate.load("seqeval")
+
+        label_names = list(ner_tag_to_int.keys())
+
+        all_predictions = []
+        all_labels = []
+        for batch in tf_dev_dataset:
+            logits = model.predict_on_batch(batch)["logits"]
+            labels = batch["labels"]
+            predictions = np.argmax(logits, axis=-1)
+            for prediction, label in zip(predictions, labels):
+                for predicted_idx, label_idx in zip(prediction, label):
+                    if label_idx == -100:
+                        continue
+                    all_predictions.append(label_names[predicted_idx])
+                    all_labels.append(label_names[label_idx])
+        metrics = metric.compute(predictions=[all_predictions], references=[all_labels])
+
+        print(f"Results with learning rate {learning_rate} and batch size {batch_size}: ", metrics)
